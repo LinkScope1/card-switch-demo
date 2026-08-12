@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>碰卡后台管理系统</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <div class="shell">
+    <aside>
+      <div class="brand">
+        <img class="brand-logo" src="./assets/company-logo.png" alt="华大智宝" />
+      </div>
+      <div class="nav"><span class="tap-icon" aria-hidden="true"><i></i></span><b>碰卡管理</b></div>
+    </aside>
+    <main>
+      <div class="content">
+        <div class="title-row"><div><h1>碰卡管理</h1><p>管理短码当前指向的目标链接</p></div><button class="btn outline" id="refreshBtn">↻ 刷新</button></div>
+        <div id="notice"></div>
+
+        <section class="panel">
+          <div class="panel-head"><h2>当前目标链接</h2></div>
+          <div class="tabs"><button class="active" data-filter="all">全部 <i id="allCount">0</i></button><button data-filter="h5">H5 <i id="h5Count">0</i></button><button data-filter="miniprogram">小程序 <i id="miniCount">0</i></button></div>
+          <div class="table"><table><thead><tr><th>类型</th><th>描述</th><th>目标地址</th><th>使用短链数</th><th>创建时间</th></tr></thead><tbody id="targetRows"></tbody></table></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head"><h2>短链接</h2><button class="btn primary" id="addLinkBtn">+ 添加短链接</button></div>
+          <div class="table"><table><thead><tr><th>名称</th><th>类型</th><th>描述</th><th>短链接</th><th>当前目标地址</th><th>操作</th></tr></thead><tbody id="cardRows"></tbody></table></div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <dialog id="linkDialog">
+    <form id="linkForm">
+      <button class="close" type="button" data-close>×</button><h2 id="linkDialogTitle">添加短链接</h2><p id="linkDialogTip">创建固定短码与目标地址的映射</p>
+      <label><span>卡片名称</span><input id="linkName" required placeholder="例如：展厅入口" /></label>
+      <label id="customCodeField"><span>自定义短码</span><div><input id="customCode" maxlength="8" placeholder="可选，留空或已存在自动生成" /><small>填写短链接末尾的 8 位内容，支持字母、数字、- 和 _</small></div></label>
+      <label id="shortUrlField" hidden><span>短链接</span><input id="shortUrl" disabled /></label>
+      <label><span>目标类型</span><div class="radio"><button class="selected" type="button" data-link-type="h5">◉ H5</button><button type="button" data-link-type="miniprogram">○ 小程序</button></div></label>
+      <label><span>链接描述</span><input id="linkDescription" placeholder="例如：百度地图网页" /></label>
+      <label><span>目标链接</span><div><input id="targetUrl" required placeholder="请输入完整目标链接" /></div></label>
+      <div class="actions"><button class="btn outline" type="button" data-close>取消</button><button class="btn primary" id="saveLinkBtn">创建</button></div>
+    </form>
+  </dialog>
+  <script src="./config.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
