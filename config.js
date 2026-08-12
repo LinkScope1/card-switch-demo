@@ -1,4 +1,5 @@
-// 本地开发保持为空字符串即可。
-// 部署到服务器时，改成 LinkForty Core 的公网地址，不要在末尾加斜杠。
-// 例：window.LINKFORTY_API = 'https://link.example.com';
-window.LINKFORTY_API = '';
+// /manage 页面由 Nginx 提供，/linkapi/ 由 Nginx 去掉前缀后反向代理到 Core。
+// 修改此前缀时，必须同步修改 Nginx 的 location 和 proxy_pass 配置。
+window.LINKFORTY_PUBLIC_PREFIX = '/linkapi';
+window.LINKFORTY_API_BASE = '/linkapi';
+window.LINKFORTY_SHORTLINK_BASE = '/linkapi';
