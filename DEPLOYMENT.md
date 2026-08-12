@@ -36,10 +36,11 @@ window.LINKFORTY_SHORTLINK_BASE = '/linkapi';
 
 ## 3. 配置 Nginx
 
-将 `nginx/card-switch-demo.conf` 复制到 Nginx 配置目录：
+从项目根目录执行，将前端自带的 Nginx 模板复制到配置目录：
 
 ```bash
-sudo cp nginx/card-switch-demo.conf /etc/nginx/sites-available/card-switch-demo
+sudo cp card-switch-demo/nginx/card-switch-demo.conf \
+  /etc/nginx/sites-available/card-switch-demo
 sudo ln -s /etc/nginx/sites-available/card-switch-demo \
   /etc/nginx/sites-enabled/card-switch-demo
 ```
@@ -74,7 +75,70 @@ sudo nginx -t
 sudo systemctl reload nginx
 ```
 
-## 4. 配置 HTTPS
+## 4. 使用公网 IP 测试
+
+域名生效前，编辑：
+
+```bash
+sudo nano /etc/nginx/sites-available/card-switch-demo
+```
+
+将：
+
+```nginx
+listen 80;
+listen [::]:80;
+server_name links.example.com;
+```
+
+临时改为：
+
+```nginx
+listen 80 default_server;
+listen [::]:80 default_server;
+server_name _;
+```
+
+如果 Nginx 默认站点仍启用，先停用其软链接，避免重复的 `default_server`：
+
+```bash
+sudo unlink /etc/nginx/sites-enabled/default
+```
+
+检查并加载：
+
+```bash
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+确认服务器安全组或防火墙已开放 `80/tcp`，然后访问：
+
+```text
+http://<PUBLIC_IP>/manage/
+http://<PUBLIC_IP>/linkapi/api/links
+http://<PUBLIC_IP>/linkapi/Abc12345
+```
+
+也可以使用命令验证：
+
+```bash
+curl -I http://<PUBLIC_IP>/manage/
+curl http://<PUBLIC_IP>/linkapi/health/ready
+curl http://<PUBLIC_IP>/linkapi/api/links
+```
+
+`config.js` 使用相对路径 `/linkapi`，无需填写公网 IP。
+
+## 5. 切换域名和 HTTPS
+
+域名生效后，将 Nginx 配置恢复为：
+
+```nginx
+listen 80;
+listen [::]:80;
+server_name links.example.com;
+```
 
 将域名解析到 Nginx 服务器后执行：
 
@@ -82,7 +146,7 @@ sudo systemctl reload nginx
 sudo certbot --nginx -d links.example.com
 ```
 
-## 5. 验证
+## 6. 验证域名访问
 
 ```bash
 curl -I https://links.example.com/manage/
