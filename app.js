@@ -26,7 +26,8 @@ function formatDate(value) {
 }
 
 function joinPath(base, path) {
-  return `${base}/${String(path).replace(/^\//, '')}`;
+  const cleanPath = String(path).replace(/^\//, '');
+  return base === '/' ? `/${cleanPath}` : `${base}/${cleanPath}`;
 }
 
 function publicUrl(path) {
