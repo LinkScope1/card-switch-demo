@@ -41,7 +41,7 @@
       <label id="shortUrlField" hidden><span>短链接</span><input id="shortUrl" disabled /></label>
       <label><span>目标类型</span><div class="radio"><button class="selected" type="button" data-link-type="h5">◉ H5</button><button type="button" data-link-type="miniprogram">○ 小程序</button></div></label>
       <label><span>链接描述</span><input id="linkDescription" placeholder="例如：百度地图网页" /></label>
-      <label><span>目标链接</span><div><input id="targetUrl" required placeholder="请输入完整目标链接" /></div></label>
+      <label><span>目标链接</span><div><input id="targetUrl" required placeholder="请输入完整目标链接" /><div id="targetUrlError" class="field-error" hidden></div></div></label>
       <div class="actions"><button class="btn outline" type="button" data-close>取消</button><button class="btn primary" id="saveLinkBtn">创建</button></div>
     </form>
   </dialog>

@@ -21,6 +21,17 @@ function notice(message, error = false) {
   setTimeout(() => $('#notice').replaceChildren(), 3500);
 }
 
+function showTargetUrlError(message = '') {
+  const input = $('#targetUrl');
+  const error = $('#targetUrlError');
+  error.textContent = message;
+  error.hidden = !message;
+  input.classList.toggle('input-error', Boolean(message));
+  if (message) {
+    input.focus();
+  }
+}
+
 function formatDate(value) {
   return value ? new Date(value).toLocaleString('zh-CN', { hour12: false }) : '-';
 }
@@ -35,25 +46,14 @@ function publicUrl(path) {
 }
 
 async function api(path, options = {}) {
-  const headers = { ...(options.headers || {}) };
-
-  // 只有请求携带 body 时，才声明 JSON 格式
-  if (options.body !== undefined && options.body !== null) {
-    headers['Content-Type'] = 'application/json';
-  }
-
-  const response = await fetch(API + path, {
+  const response = await fetch(joinPath(API, path), {
     ...options,
-    headers,
+    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
   });
-
   if (!response.ok) {
     const data = await response.json().catch(() => ({}));
-    throw new Error(
-        data.error || data.message || `LinkForty 请求失败 (${response.status})`
-    );
+    throw new Error(data.error || data.message || `LinkForty 请求失败 (${response.status})`);
   }
-
   return response.status === 204 ? null : response.json();
 }
 
@@ -142,6 +142,7 @@ function closeDialogs() {
 function openCreateDialog() {
   editingLinkId = null;
   linkType = 'h5';
+  showTargetUrlError('');
   syncTypeButtons();
   $('#linkDialogTitle').textContent = '添加短链接';
   $('#linkDialogTip').textContent = '创建固定短码与目标地址的映射';
@@ -179,11 +180,40 @@ $('#linkForm').onsubmit = async event => {
   event.preventDefault();
   const button = $('#saveLinkBtn');
   button.disabled = true;
+
   try {
+    showTargetUrlError('');
+
+    const targetUrl = $('#targetUrl').value.trim();
+
+    if (!targetUrl) {
+      showTargetUrlError('请填写目标链接');
+      return;
+    }
+
+    let parsedUrl;
+
+    try {
+      parsedUrl = new URL(targetUrl);
+    } catch {
+      showTargetUrlError(
+        '链接格式不正确，请填写完整链接，例如：https://www.baidu.com'
+      );
+      return;
+    }
+
+    if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+      showTargetUrlError('目标链接必须以 http:// 或 https:// 开头');
+      return;
+    }
+
     const body = {
-      originalUrl: $('#targetUrl').value.trim(),
+      originalUrl: targetUrl,
       title: $('#linkName').value.trim(),
-      description: createDescription(linkType, $('#linkDescription').value),
+      description: createDescription(
+        linkType,
+        $('#linkDescription').value
+      ),
     };
     if (editingLinkId) {
       await api(`/api/links/${encodeURIComponent(editingLinkId)}`, {
@@ -215,6 +245,7 @@ $('#linkForm').onsubmit = async event => {
 document.addEventListener('click', async event => {
   const edit = event.target.closest('[data-edit-link]');
   if (edit) {
+    showTargetUrlError('');
     const link = links.find(item => item.id === edit.dataset.editLink);
     editingLinkId = link.id;
     linkType = link.linkType;
