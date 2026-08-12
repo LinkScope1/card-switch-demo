@@ -1,4 +1,6 @@
-const API = (window.LINKFORTY_API || `${window.location.protocol}//${window.location.hostname}:3000`).replace(/\/$/, '');
+const normalizeBase = value => String(value || '').replace(/\/$/, '') || '/';
+const API = normalizeBase(window.LINKFORTY_API_BASE || window.LINKFORTY_PUBLIC_PREFIX);
+const SHORTLINK_BASE = normalizeBase(window.LINKFORTY_SHORTLINK_BASE || window.LINKFORTY_PUBLIC_PREFIX);
 const LINK_TYPES = new Set(['h5', 'miniprogram']);
 
 let links = [];
@@ -23,8 +25,16 @@ function formatDate(value) {
   return value ? new Date(value).toLocaleString('zh-CN', { hour12: false }) : '-';
 }
 
+function joinPath(base, path) {
+  return `${base}/${String(path).replace(/^\//, '')}`;
+}
+
+function publicUrl(path) {
+  return new URL(path, window.location.origin).toString();
+}
+
 async function api(path, options = {}) {
-  const response = await fetch(API + path, {
+  const response = await fetch(joinPath(API, path), {
     ...options,
     headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
   });
@@ -93,14 +103,14 @@ function render() {
   </tr>`).join('') : '<tr><td class="empty" colspan="5">暂无目标链接</td></tr>';
 
   $('#cardRows').innerHTML = links.length ? links.map(link => {
-    const shortUrl = `${API}/${encodeURIComponent(link.short_code)}`;
+    const shortUrl = publicUrl(joinPath(SHORTLINK_BASE, encodeURIComponent(link.short_code)));
     return `<tr>
       <td>${escapeHtml(link.title || '未命名链接')}</td>
       <td><span class="tag ${link.linkType}">${link.linkType === 'h5' ? 'H5' : '小程序'}</span></td>
       <td>${escapeHtml(link.linkDescription || '-')}</td>
       <td><a href="${escapeHtml(shortUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(shortUrl)}</a></td>
       <td class="url">${escapeHtml(link.original_url)}</td>
-      <td><a class="link" href="${escapeHtml(shortUrl)}" target="_blank" rel="noopener noreferrer">打开链接</a><button class="link" data-edit-link="${link.id}">修改</button></td>
+      <td><a class="link" href="${escapeHtml(shortUrl)}" target="_blank" rel="noopener noreferrer">打开链接</a><button class="link" data-edit-link="${link.id}">修改</button><button class="link danger" data-delete-link="${link.id}">删除</button></td>
     </tr>`;
   }).join('') : '<tr><td class="empty" colspan="6">暂无短链接，请先添加</td></tr>';
 }
@@ -190,23 +200,39 @@ $('#linkForm').onsubmit = async event => {
   }
 };
 
-document.addEventListener('click', event => {
+document.addEventListener('click', async event => {
   const edit = event.target.closest('[data-edit-link]');
-  if (!edit) return;
-  const link = links.find(item => item.id === edit.dataset.editLink);
-  editingLinkId = link.id;
-  linkType = link.linkType;
-  syncTypeButtons();
-  $('#linkDialogTitle').textContent = '修改短链接跳转';
-  $('#linkDialogTip').textContent = '短码不会改变，只更新该记录当前指向的目标地址';
-  $('#saveLinkBtn').textContent = '保存修改';
-  $('#customCodeField').hidden = true;
-  $('#shortUrlField').hidden = false;
-  $('#shortUrl').value = `${API}/${link.short_code}`;
-  $('#linkName').value = link.title || '';
-  $('#linkDescription').value = link.linkDescription || '';
-  $('#targetUrl').value = link.original_url;
-  $('#linkDialog').showModal();
+  if (edit) {
+    const link = links.find(item => item.id === edit.dataset.editLink);
+    editingLinkId = link.id;
+    linkType = link.linkType;
+    syncTypeButtons();
+    $('#linkDialogTitle').textContent = '修改短链接跳转';
+    $('#linkDialogTip').textContent = '短码不会改变，只更新该记录当前指向的目标地址';
+    $('#saveLinkBtn').textContent = '保存修改';
+    $('#customCodeField').hidden = true;
+    $('#shortUrlField').hidden = false;
+    $('#shortUrl').value = publicUrl(joinPath(SHORTLINK_BASE, encodeURIComponent(link.short_code)));
+    $('#linkName').value = link.title || '';
+    $('#linkDescription').value = link.linkDescription || '';
+    $('#targetUrl').value = link.original_url;
+    $('#linkDialog').showModal();
+    return;
+  }
+
+  const remove = event.target.closest('[data-delete-link]');
+  if (!remove) return;
+  const link = links.find(item => item.id === remove.dataset.deleteLink);
+  if (!confirm(`确定删除“${link?.title || '这条短链接'}”吗？删除后 NFC 中的短链接将无法访问。`)) return;
+  remove.disabled = true;
+  try {
+    await api(`/api/links/${encodeURIComponent(remove.dataset.deleteLink)}`, { method: 'DELETE' });
+    await loadData();
+    notice('短链接已从 links 表删除');
+  } catch (error) {
+    remove.disabled = false;
+    notice(`删除失败：${error.message}`, true);
+  }
 });
 
 loadData().catch(error => notice(`数据加载失败：${error.message}`, true));
