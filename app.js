@@ -35,14 +35,25 @@ function publicUrl(path) {
 }
 
 async function api(path, options = {}) {
-  const response = await fetch(joinPath(API, path), {
+  const headers = { ...(options.headers || {}) };
+
+  // 只有请求携带 body 时，才声明 JSON 格式
+  if (options.body !== undefined && options.body !== null) {
+    headers['Content-Type'] = 'application/json';
+  }
+
+  const response = await fetch(API + path, {
     ...options,
-    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+    headers,
   });
+
   if (!response.ok) {
     const data = await response.json().catch(() => ({}));
-    throw new Error(data.error || data.message || `LinkForty 请求失败 (${response.status})`);
+    throw new Error(
+        data.error || data.message || `LinkForty 请求失败 (${response.status})`
+    );
   }
+
   return response.status === 204 ? null : response.json();
 }
 
