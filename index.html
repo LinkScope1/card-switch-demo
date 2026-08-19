@@ -37,7 +37,7 @@
     <form id="linkForm">
       <button class="close" type="button" data-close>×</button><h2 id="linkDialogTitle">添加短链接</h2><p id="linkDialogTip">创建固定短码与目标地址的映射</p>
       <label><span>卡片名称</span><input id="linkName" required placeholder="例如：展厅入口" /></label>
-      <label id="customCodeField"><span>自定义短码</span><div><input id="customCode" maxlength="8" placeholder="可选，留空或已存在自动生成" /><small>填写短链接末尾的 8 位内容，支持字母、数字、- 和 _</small></div></label>
+      <label id="customCodeField"><span>自定义短码</span><div><input id="customCode" minlength="8" maxlength="20" placeholder="可选，留空则自动生成" autocomplete="off"/><small>可填写8～20位，支持英文字母、数字、- 和 _；留空时自动生成8位短码</small></div></label>
       <label id="shortUrlField" hidden><span>短链接</span><input id="shortUrl" disabled /></label>
       <label><span>目标类型</span><div class="radio"><button class="selected" type="button" data-link-type="h5">◉ H5</button><button type="button" data-link-type="miniprogram">○ 小程序</button></div></label>
       <label><span>链接描述</span><input id="linkDescription" placeholder="例如：百度地图网页" /></label>

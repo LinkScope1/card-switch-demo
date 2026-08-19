@@ -50,7 +50,7 @@ async function api(path, options = {}) {
   if (!response.ok) {
     const data = await response.json().catch(() => ({}));
     throw new Error(
-        data.error || data.message || `LinkForty 请求失败 (${response.status})`
+      data.error || data.message || `LinkForty 请求失败 (${response.status})`
     );
   }
 
@@ -193,8 +193,9 @@ $('#linkForm').onsubmit = async event => {
       notice('目标地址已修改，原短链接保持不变');
     } else {
       const customCode = $('#customCode').value.trim();
-      if (customCode && !/^[A-Za-z0-9_-]{8}$/.test(customCode)) {
-        throw new Error('自定义短链接必须正好 8 位，只能使用字母、数字、- 和 _');
+
+      if (customCode && !/^[A-Za-z0-9_-]{8,20}$/.test(customCode)) {
+        throw new Error('自定义短码必须为8～20位，只能包含英文字母、数字、- 和 _');
       }
       if (customCode && links.some(link => link.short_code === customCode)) {
         throw new Error('这个自定义短链接已经存在，请更换');
