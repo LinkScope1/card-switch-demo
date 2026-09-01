@@ -271,12 +271,8 @@ function validateAppFields() {
   return { iosScheme, androidScheme, harmonyScheme, appPayload, webFallbackUrl };
 }
 
-function validatePlainTarget() {
-  const value = $('#plainTargetUrl').value.trim();
-  if (!value || !isHttpUrl(value)) {
-    throw new Error('目标链接必须是完整的 http:// 或 https:// 地址');
-  }
-  return value;
+function getPlainTarget() {
+  return $('#plainTargetUrl').value.trim();
 }
 
 $('#addLinkBtn').onclick = openCreateDialog;
@@ -303,7 +299,7 @@ $('#linkForm').onsubmit = async event => {
   try {
     const isApp = linkType === 'app';
     const bridgeConfig = isApp ? validateAppFields() : null;
-    const targetUrl = isApp ? bridgeConfig.webFallbackUrl : validatePlainTarget();
+    const targetUrl = isApp ? bridgeConfig.webFallbackUrl : getPlainTarget();
     const currentLink = editingLinkId ? links.find(link => link.id === editingLinkId) : null;
     const originalUrl = bridgeConfig
       ? buildBridgeUrl({ ...bridgeConfig, linkId: currentLink?.id, defaultPage: targetUrl })
