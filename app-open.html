@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="referrer" content="no-referrer" />
+  <title>正在打开中国工商银行 App</title>
+  <style>
+    :root { color-scheme: light; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px; background: linear-gradient(145deg, #f7fafc, #eaf2fb); color: #172033; }
+    .card { width: min(100%, 460px); padding: 34px 26px 28px; border: 1px solid #dce5ef; border-radius: 18px; background: rgba(255, 255, 255, .96); box-shadow: 0 18px 55px rgba(32, 65, 101, .14); text-align: center; }
+    .logo { width: min(100%, 230px); max-height: 62px; object-fit: contain; margin-bottom: 18px; }
+    .spinner { width: 42px; height: 42px; margin: 6px auto 20px; border: 4px solid #dce8f6; border-top-color: #1473ed; border-radius: 50%; animation: spin .8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    h1 { margin: 0 0 10px; font-size: 22px; line-height: 1.4; }
+    p { margin: 0 auto 22px; color: #667085; font-size: 15px; line-height: 1.7; }
+    .actions { display: grid; gap: 10px; }
+    .button { display: block; padding: 13px 16px; border-radius: 9px; text-decoration: none; font-weight: 600; }
+    .button.primary { background: #1473ed; color: #fff; }
+    .button.secondary { background: #edf3fb; color: #175ea8; }
+    .hint { margin-top: 18px; color: #8a94a3; font-size: 12px; line-height: 1.6; }
+    .error { color: #c0342b; }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <img class="logo" src="./assets/company-logo.png" alt="华大智宝" />
+    <div id="spinner" class="spinner" aria-hidden="true"></div>
+    <h1 id="title">正在打开中国工商银行 App</h1>
+    <div class="actions">
+      <a id="openAppButton" class="button primary" href="#" hidden>打开 App</a>
+      <a id="webFallbackButton" class="button secondary" href="#" hidden>访问网页</a>
+    </div>
+    <div id="hint" class="hint">如果 App 没有自动打开，请点击“打开 App”。</div>
+  </main>
+  <script src="./config.js"></script>
+  <script src="./app-open.js"></script>
+</body>
+</html>

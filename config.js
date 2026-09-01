@@ -3,3 +3,11 @@
 window.LINKFORTY_PUBLIC_PREFIX = '/linkapi';
 window.LINKFORTY_API_BASE = '/linkapi';
 window.LINKFORTY_SHORTLINK_BASE = '/linkapi';
+
+// App deep-link configuration used by /manage/app-open.html.
+// Keep the scheme values without the trailing "://"; the bridge page adds it.
+window.APP_OPEN_CONFIG = {
+  iosScheme: 'com.icbc.iphoneclient',
+  androidScheme: 'com.icbc.androidclient',
+  harmonyScheme: 'com.icbc.harmonyclient',
+};

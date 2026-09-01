@@ -2,3 +2,21 @@
 .status{min-width:64px;text-align:center;font-weight:600}.status.active{color:#176b3a;background:#d9f8e5}.status.inactive{color:#b42318;background:#fee4e2}
 @media(max-width:760px){aside{width:70px}.brand{padding:0 13px}.brand-logo{width:44px;height:41px;object-fit:cover;object-position:left}.nav b{display:none}.nav{padding:0 23px}.content{padding:20px 14px}header{padding:0 18px}.title-row{align-items:flex-start}dialog form{padding:38px 22px}dialog label{grid-template-columns:1fr;gap:8px}dialog label>span{padding:0}.radio{flex-wrap:wrap}.hint{margin-left:0}}
 .table td .link + .link{margin-left:14px}
+.field-error {
+margin-top: 8px;
+  color: #e5484d;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+input.input-error,
+textarea.input-error {
+  border-color: #e5484d;
+  background: #fff7f7;
+}
+
+input.input-error:focus,
+textarea.input-error:focus {
+  border-color: #e5484d;
+  box-shadow: 0 0 0 2px #fee2e2;
+}

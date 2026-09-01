@@ -5,6 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>碰卡后台管理系统</title>
   <link rel="stylesheet" href="./style.css" />
+  <style>
+    .form-row { display: grid; grid-template-columns: 155px 1fr; align-items: start; gap: 0; margin: 20px 0; }
+    .form-row > span { padding-top: 12px; font-weight: 600; }
+    textarea { width: 100%; padding: 12px 14px; border: 1px solid #ccd2db; border-radius: 7px; resize: vertical; line-height: 1.5; outline: none; font: inherit; }
+    textarea:focus { border-color: #287df0; box-shadow: 0 0 0 2px #dbeafe; }
+    .app-open-fields[hidden], .plain-target-field[hidden] { display: none; }
+    .tag.app { color: #a15c00; background: #fff2cc; }
+    @media(max-width:760px) {
+      .form-row { grid-template-columns: 1fr; gap: 8px; }
+      .form-row > span { padding-top: 0; }
+    }
+  </style>
 </head>
 <body>
   <div class="shell">
@@ -20,14 +32,8 @@
         <div id="notice"></div>
 
         <section class="panel">
-          <div class="panel-head"><h2>当前目标链接</h2></div>
-          <div class="tabs"><button class="active" data-filter="all">全部 <i id="allCount">0</i></button><button data-filter="h5">H5 <i id="h5Count">0</i></button><button data-filter="miniprogram">小程序 <i id="miniCount">0</i></button></div>
-          <div class="table"><table><thead><tr><th>类型</th><th>描述</th><th>目标地址</th><th>使用短链数</th><th>创建时间</th></tr></thead><tbody id="targetRows"></tbody></table></div>
-        </section>
-
-        <section class="panel">
           <div class="panel-head"><h2>短链接</h2><button class="btn primary" id="addLinkBtn">+ 添加短链接</button></div>
-          <div class="table"><table><thead><tr><th>名称</th><th>类型</th><th>描述</th><th>短链接</th><th>当前目标地址</th><th>操作</th></tr></thead><tbody id="cardRows"></tbody></table></div>
+          <div class="table"><table><thead><tr><th>名称</th><th>类型</th><th>描述</th><th>App 拉起</th><th>短链接</th><th>当前目标地址</th><th>操作</th></tr></thead><tbody id="cardRows"></tbody></table></div>
         </section>
       </div>
     </main>
@@ -37,11 +43,18 @@
     <form id="linkForm">
       <button class="close" type="button" data-close>×</button><h2 id="linkDialogTitle">添加短链接</h2><p id="linkDialogTip">创建固定短码与目标地址的映射</p>
       <label><span>卡片名称</span><input id="linkName" required placeholder="例如：展厅入口" /></label>
-      <label id="customCodeField"><span>自定义短码</span><div><input id="customCode" minlength="8" maxlength="20" placeholder="可选，留空则自动生成" autocomplete="off"/><small>可填写8～20位，支持英文字母、数字、- 和 _；留空时自动生成8位短码</small></div></label>
+      <label id="customCodeField"><span>自定义短码</span><div><input id="customCode" placeholder="可选，留空时自动生成" autocomplete="off" /><small>长度不限，支持字母、数字、- 和 _</small></div></label>
       <label id="shortUrlField" hidden><span>短链接</span><input id="shortUrl" disabled /></label>
-      <label><span>目标类型</span><div class="radio"><button class="selected" type="button" data-link-type="h5">◉ H5</button><button type="button" data-link-type="miniprogram">○ 小程序</button></div></label>
+      <label><span>目标类型</span><div class="radio"><button class="selected" type="button" data-link-type="h5">◉ H5</button><button type="button" data-link-type="miniprogram">○ 小程序</button><button type="button" data-link-type="app">○ App</button></div></label>
       <label><span>链接描述</span><input id="linkDescription" placeholder="例如：百度地图网页" /></label>
-      <label><span>目标链接</span><div><input id="targetUrl" required placeholder="请输入完整目标链接" /></div></label>
+      <div id="appOpenFields" class="app-open-fields" hidden>
+        <label><span>iOS Scheme</span><div><input id="iosScheme" value="com.icbc.iphoneclient://" placeholder="例如：com.icbc.iphoneclient://" /></div></label>
+        <label><span>Android Scheme</span><div><input id="androidScheme" value="com.icbc.androidclient://" placeholder="例如：com.icbc.androidclient://" /></div></label>
+        <label><span>鸿蒙 Scheme</span><div><input id="harmonyScheme" value="com.icbc.harmonyclient://" placeholder="例如：com.icbc.harmonyclient://" /></div></label>
+        <label><span>App 跳转参数</span><div><textarea id="appPayload" rows="4" spellcheck="false" placeholder="例如：startType=PORTALINJECT&menuId=conformity&injectParams=原始 Base64 字符串"></textarea><small>填写 Scheme:// 后的全部内容</small><div id="appPayloadError" class="field-error" hidden></div></div></label>
+        <label><span>默认页</span><div><input id="targetUrl" placeholder="请输入完整默认页地址" /><div id="targetUrlError" class="field-error" hidden></div></div></label>
+      </div>
+      <div id="plainTargetField" class="plain-target-field"><label><span>目标链接</span><div><input id="plainTargetUrl" placeholder="请输入完整目标链接" /><div id="plainTargetUrlError" class="field-error" hidden></div></div></label></div>
       <div class="actions"><button class="btn outline" type="button" data-close>取消</button><button class="btn primary" id="saveLinkBtn">创建</button></div>
     </form>
   </dialog>
