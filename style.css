@@ -9,6 +9,10 @@ margin-top: 8px;
   line-height: 20px;
 }
 
+.scheme-group-error {
+  margin-left: 155px;
+}
+
 input.input-error,
 textarea.input-error {
   border-color: #e5484d;
@@ -19,4 +23,10 @@ input.input-error:focus,
 textarea.input-error:focus {
   border-color: #e5484d;
   box-shadow: 0 0 0 2px #fee2e2;
+}
+
+@media(max-width:760px) {
+  .scheme-group-error {
+    margin-left: 0;
+  }
 }

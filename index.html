@@ -33,7 +33,7 @@
 
         <section class="panel">
           <div class="panel-head"><h2>短链接</h2><button class="btn primary" id="addLinkBtn">+ 添加短链接</button></div>
-          <div class="table"><table><thead><tr><th>名称</th><th>类型</th><th>描述</th><th>App 拉起</th><th>短链接</th><th>当前目标地址</th><th>操作</th></tr></thead><tbody id="cardRows"></tbody></table></div>
+          <div class="table"><table><thead><tr><th>名称</th><th>类型</th><th>描述</th><th>短链接</th><th>当前目标地址</th><th>操作</th></tr></thead><tbody id="cardRows"></tbody></table></div>
         </section>
       </div>
     </main>
@@ -48,10 +48,11 @@
       <label><span>目标类型</span><div class="radio"><button class="selected" type="button" data-link-type="h5">◉ H5</button><button type="button" data-link-type="miniprogram">○ 小程序</button><button type="button" data-link-type="app">○ App</button></div></label>
       <label><span>链接描述</span><input id="linkDescription" placeholder="例如：百度地图网页" /></label>
       <div id="appOpenFields" class="app-open-fields" hidden>
-        <label><span>iOS Scheme</span><div><input id="iosScheme" value="com.icbc.iphoneclient://" placeholder="例如：com.icbc.iphoneclient://" /></div></label>
-        <label><span>Android Scheme</span><div><input id="androidScheme" value="com.icbc.androidclient://" placeholder="例如：com.icbc.androidclient://" /></div></label>
-        <label><span>鸿蒙 Scheme</span><div><input id="harmonyScheme" value="com.icbc.harmonyclient://" placeholder="例如：com.icbc.harmonyclient://" /></div></label>
-        <label><span>App 跳转参数</span><div><textarea id="appPayload" rows="4" spellcheck="false" placeholder="例如：startType=PORTALINJECT&menuId=conformity&injectParams=原始 Base64 字符串"></textarea><small>填写 Scheme:// 后的全部内容</small><div id="appPayloadError" class="field-error" hidden></div></div></label>
+        <label><span>iOS Scheme（可选）</span><div><input id="iosScheme" value="" placeholder="例如：com.example.iosapp://" /><div id="iosSchemeError" class="field-error" hidden></div></div></label>
+        <label><span>Android Scheme（可选）</span><div><input id="androidScheme" value="" placeholder="例如：com.example.androidapp://" /><div id="androidSchemeError" class="field-error" hidden></div></div></label>
+        <label><span>鸿蒙 Scheme（可选）</span><div><input id="harmonyScheme" value="" placeholder="例如：com.example.harmonyapp://" /><div id="harmonySchemeError" class="field-error" hidden></div></div></label>
+        <div id="schemeGroupError" class="field-error scheme-group-error" hidden>至少填写一个平台 Scheme</div>
+        <label><span>App 跳转参数</span><div><textarea id="appPayload" rows="4" maxlength="4096" spellcheck="false" placeholder="请按目标软件要求填写 Scheme:// 后的全部内容"></textarea><div id="appPayloadError" class="field-error" hidden></div></div></label>
         <label><span>默认页</span><div><input id="targetUrl" placeholder="请输入完整默认页地址" /><div id="targetUrlError" class="field-error" hidden></div></div></label>
       </div>
       <div id="plainTargetField" class="plain-target-field"><label><span>目标链接</span><div><input id="plainTargetUrl" placeholder="请输入完整目标链接" /><div id="plainTargetUrlError" class="field-error" hidden></div></div></label></div>

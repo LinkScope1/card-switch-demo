@@ -104,9 +104,7 @@ ls -l /var/www/card-switch-demo/index.html
 前端默认代理前缀在 `config.js`：
 
 ```js
-window.LINKFORTY_PUBLIC_PREFIX = '/linkapi';
-window.LINKFORTY_API_BASE = '/linkapi';
-window.LINKFORTY_SHORTLINK_BASE = '/linkapi';
+window.LINKFORTY_BASE = '/linkapi';
 ```
 
 这些是相对路径，不需要填写公网 IP 或 Core 的端口。修改 `/linkapi` 时，必须同步修改 Nginx 的 `location`。
