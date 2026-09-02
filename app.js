@@ -324,8 +324,8 @@ $('#linkForm').onsubmit = async event => {
       notice('链接配置已修改，原短链接保持不变');
     } else {
       const customCode = $('#customCode').value.trim();
-      if (customCode && !/^[A-Za-z0-9_-]+$/.test(customCode)) {
-        throw new Error('自定义短链接只能使用字母、数字、- 和 _');
+      if (customCode && !/^[A-Za-z0-9_-]{8,20}$/.test(customCode)) {
+        throw new Error('自定义短链接必须为 8～20 位，只能使用字母、数字、- 和 _');
       }
       if (customCode && links.some(link => link.short_code === customCode)) {
         throw new Error('这个自定义短链接已经存在，请更换');
