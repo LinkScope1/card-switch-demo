@@ -19,10 +19,6 @@
   const appPayload = String(query.get('appPayload') || query.get('payload') || legacyPayload).trim().replace(/^\/\//, '').replace(/&+$/g, '');
   const legacyWebFallbackUrl = query.get('defaultPage') || query.get('web') || config.webFallbackUrl || '';
   let webFallbackUrl = legacyWebFallbackUrl;
-  const spinner = document.getElementById('spinner');
-  const hint = document.getElementById('hint');
-  const openAppButton = document.getElementById('openAppButton');
-  const webFallbackButton = document.getElementById('webFallbackButton');
   const APP_ATTEMPT_TIMEOUT = 6000;
   let appOpened = false;
   let appAttempted = false;
@@ -140,12 +136,6 @@
     }
   }
 
-  function showFallback() {
-    if (appOpened) return;
-    spinner.hidden = true;
-    hint.textContent = '如果 App 没有打开，请点击“打开 App”或“访问网页”。';
-  }
-
   function redirectToFallback() {
     if (!fallbackRedirected && webFallbackUrl && isHttpsUrl(webFallbackUrl)) {
       fallbackRedirected = true;
@@ -156,7 +146,6 @@
   function scheduleFallback() {
     clearFallbackTimer();
     fallbackTimer = window.setTimeout(() => {
-      showFallback();
       redirectToFallback();
     }, APP_ATTEMPT_TIMEOUT);
   }
@@ -165,50 +154,32 @@
     webFallbackUrl = await resolveDefaultPage();
 
     if (!webFallbackUrl || !isHttpsUrl(webFallbackUrl)) {
-      showFallback();
       return;
     }
 
-    webFallbackButton.href = webFallbackUrl;
-    webFallbackButton.hidden = false;
-
     const platform = detectPlatform();
     if (platform === 'web') {
-      showFallback();
       redirectToFallback();
       return;
     }
 
     const appUrl = buildAppUrl(platform);
     if (!appUrl) {
-      showFallback();
       redirectToFallback();
       return;
     }
 
     appAttempted = true;
-    openAppButton.href = appUrl;
-    openAppButton.hidden = false;
 
     try {
       window.location.assign(appUrl);
     } catch {
-      showFallback();
       scheduleFallback();
       return;
     }
 
     scheduleFallback();
   }
-
-  openAppButton.addEventListener('click', () => {
-    // A user click may be allowed by browsers that block the automatic attempt.
-    // Give this second attempt a fresh 6-second window before falling back.
-    appOpened = false;
-    appAttempted = true;
-    spinner.hidden = false;
-    scheduleFallback();
-  });
 
   document.addEventListener('visibilitychange', () => {
     if (document.hidden && appAttempted) {
