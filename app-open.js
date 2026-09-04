@@ -2,25 +2,23 @@
   'use strict';
 
   const config = window.APP_OPEN_CONFIG || {};
+  const MAX_APP_PAYLOAD_LENGTH = 4096;
   const query = new URLSearchParams(window.location.search);
-  const apiBase = normalizeBase(window.LINKFORTY_API_BASE || window.LINKFORTY_PUBLIC_PREFIX);
+  const apiBase = normalizeBase(window.LINKFORTY_BASE);
   const APP_OPEN_PAGE_PATH = new URL('./app-open.html', window.location.href).pathname;
   const linkId = query.get('linkId') || '';
   const iosScheme = query.get('iosScheme') || config.iosScheme || '';
   const androidScheme = query.get('androidScheme') || config.androidScheme || '';
   const harmonyScheme = query.get('harmonyScheme') || config.harmonyScheme || '';
-  const legacyPayload = [
+  const hasLegacyPayload = ['startType', 'menuId', 'injectParams'].some(key => query.has(key));
+  const legacyPayload = hasLegacyPayload ? [
     `startType=${query.get('startType') || 'PORTALINJECT'}`,
     `menuId=${query.get('menuId') || 'conformity'}`,
     `injectParams=${query.get('injectParams') || ''}`,
-  ].join('&');
+  ].join('&') : '';
   const appPayload = String(query.get('appPayload') || query.get('payload') || legacyPayload).trim().replace(/^\/\//, '').replace(/&+$/g, '');
   const legacyWebFallbackUrl = query.get('defaultPage') || query.get('web') || config.webFallbackUrl || '';
   let webFallbackUrl = legacyWebFallbackUrl;
-  const spinner = document.getElementById('spinner');
-  const hint = document.getElementById('hint');
-  const openAppButton = document.getElementById('openAppButton');
-  const webFallbackButton = document.getElementById('webFallbackButton');
   const APP_ATTEMPT_TIMEOUT = 6000;
   let appOpened = false;
   let appAttempted = false;
@@ -102,27 +100,10 @@
     }
   }
 
-  function withShareCurrentUUID(payload) {
-    const normalizedPayload = payload
-      .split('&')
-      .filter(item => !item.startsWith('shareCurrentUUID='))
-      .join('&');
-    return `${normalizedPayload}${normalizedPayload ? '&' : ''}shareCurrentUUID=${createUuid()}`;
-  }
-
-  function getPayloadField(payload, field) {
-    const entry = payload.split('&').find(item => item.startsWith(`${field}=`));
-    return entry ? entry.slice(field.length + 1) : '';
-  }
-
   function isValidAppPayload(payload) {
-    const startType = getPayloadField(payload, 'startType');
-    const menuId = getPayloadField(payload, 'menuId');
-    const injectParams = getPayloadField(payload, 'injectParams');
-    return /^[A-Za-z][A-Za-z0-9_-]*$/.test(startType)
-      && /^[A-Za-z][A-Za-z0-9_-]*$/.test(menuId)
-      && Boolean(injectParams)
-      && /^[A-Za-z0-9+/_=-]+$/.test(injectParams);
+    return Boolean(payload)
+      && payload.length <= MAX_APP_PAYLOAD_LENGTH
+      && !/[\u0000-\u001f\u007f]/.test(payload);
   }
 
   function detectPlatform() {
@@ -136,23 +117,6 @@
     return 'web';
   }
 
-  function createUuid() {
-    if (window.crypto?.randomUUID) return window.crypto.randomUUID();
-    if (!window.crypto?.getRandomValues) {
-      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, char => {
-        const random = Math.random() * 16 | 0;
-        const value = char === 'x' ? random : (random & 0x3 | 0x8);
-        return value.toString(16);
-      });
-    }
-    const bytes = new Uint8Array(16);
-    window.crypto.getRandomValues(bytes);
-    bytes[6] = (bytes[6] & 0x0f) | 0x40;
-    bytes[8] = (bytes[8] & 0x3f) | 0x80;
-    const hex = [...bytes].map(value => value.toString(16).padStart(2, '0')).join('');
-    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
-  }
-
   function buildAppUrl(platform) {
     const scheme = platform === 'ios'
       ? iosScheme
@@ -160,10 +124,9 @@
     const normalizedScheme = normalizeScheme(scheme);
     if (!normalizedScheme || !isValidAppPayload(appPayload)) return '';
 
-    // This is the ICBC app contract: no '?' after :// and no URLSearchParams
-    // here, so the user-provided payload stays byte-for-byte unchanged.
-    const payload = withShareCurrentUUID(appPayload);
-    return `${normalizedScheme}://${payload}`;
+    // Keep the target app's payload format opaque; the bridge only prefixes
+    // the selected scheme and does not parse or append app-specific fields.
+    return `${normalizedScheme}://${appPayload}`;
   }
 
   function clearFallbackTimer() {
@@ -171,12 +134,6 @@
       window.clearTimeout(fallbackTimer);
       fallbackTimer = null;
     }
-  }
-
-  function showFallback() {
-    if (appOpened) return;
-    spinner.hidden = true;
-    hint.textContent = '如果 App 没有打开，请点击“打开 App”或“访问网页”。';
   }
 
   function redirectToFallback() {
@@ -189,7 +146,6 @@
   function scheduleFallback() {
     clearFallbackTimer();
     fallbackTimer = window.setTimeout(() => {
-      showFallback();
       redirectToFallback();
     }, APP_ATTEMPT_TIMEOUT);
   }
@@ -198,50 +154,32 @@
     webFallbackUrl = await resolveDefaultPage();
 
     if (!webFallbackUrl || !isHttpsUrl(webFallbackUrl)) {
-      showFallback();
       return;
     }
 
-    webFallbackButton.href = webFallbackUrl;
-    webFallbackButton.hidden = false;
-
     const platform = detectPlatform();
     if (platform === 'web') {
-      showFallback();
       redirectToFallback();
       return;
     }
 
     const appUrl = buildAppUrl(platform);
     if (!appUrl) {
-      showFallback();
       redirectToFallback();
       return;
     }
 
     appAttempted = true;
-    openAppButton.href = appUrl;
-    openAppButton.hidden = false;
 
     try {
       window.location.assign(appUrl);
     } catch {
-      showFallback();
       scheduleFallback();
       return;
     }
 
     scheduleFallback();
   }
-
-  openAppButton.addEventListener('click', () => {
-    // A user click may be allowed by browsers that block the automatic attempt.
-    // Give this second attempt a fresh 6-second window before falling back.
-    appOpened = false;
-    appAttempted = true;
-    spinner.hidden = false;
-    scheduleFallback();
-  });
 
   document.addEventListener('visibilitychange', () => {
     if (document.hidden && appAttempted) {

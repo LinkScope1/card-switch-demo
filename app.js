@@ -1,6 +1,6 @@
 const normalizeBase = value => String(value || '').replace(/\/$/, '') || '/';
-const API = normalizeBase(window.LINKFORTY_API_BASE || window.LINKFORTY_PUBLIC_PREFIX);
-const SHORTLINK_BASE = normalizeBase(window.LINKFORTY_SHORTLINK_BASE || window.LINKFORTY_PUBLIC_PREFIX);
+const API = normalizeBase(window.LINKFORTY_BASE);
+const SHORTLINK_BASE = normalizeBase(window.LINKFORTY_BASE);
 const LINK_TYPES = new Set(['h5', 'miniprogram', 'app']);
 const APP_CONFIG = window.APP_OPEN_CONFIG || {};
 const APP_OPEN_PAGE_PATH = new URL('./app-open.html', window.location.href).pathname;
@@ -32,6 +32,44 @@ function showFieldError(inputSelector, errorSelector, message = '') {
     input.classList.toggle('input-error', Boolean(message));
     if (message) input.focus();
   }
+}
+
+class FormValidationError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'FormValidationError';
+  }
+}
+
+function throwFieldValidation(inputSelector, errorSelector, message) {
+  showFieldError(inputSelector, errorSelector, message);
+  throw new FormValidationError(message);
+}
+
+function throwGroupValidation(errorSelector, inputSelector, message) {
+  showGroupError(errorSelector, message);
+  const input = $(inputSelector);
+  if (input) input.focus();
+  throw new FormValidationError(message);
+}
+
+function showGroupError(errorSelector, message = '') {
+  const error = $(errorSelector);
+  if (error) {
+    error.textContent = message;
+    error.hidden = !message;
+  }
+}
+
+function clearAppValidationErrors() {
+  [
+    ['#iosScheme', '#iosSchemeError'],
+    ['#androidScheme', '#androidSchemeError'],
+    ['#harmonyScheme', '#harmonySchemeError'],
+    ['#appPayload', '#appPayloadError'],
+    ['#targetUrl', '#targetUrlError'],
+  ].forEach(([inputSelector, errorSelector]) => showFieldError(inputSelector, errorSelector));
+  showGroupError('#schemeGroupError');
 }
 
 function joinPath(base, path) {
@@ -96,10 +134,6 @@ function isHttpUrl(value, requireHttps = false) {
   }
 }
 
-function isBase64(value) {
-  return /^[A-Za-z0-9+/_=-]+$/.test(value);
-}
-
 function isAppOpenUrl(value) {
   try {
     return new URL(value).pathname === APP_OPEN_PAGE_PATH;
@@ -109,6 +143,9 @@ function isAppOpenUrl(value) {
 }
 
 function createLegacyAppPayload(url) {
+  const hasLegacyPayload = ['startType', 'menuId', 'injectParams'].some(key => url.searchParams.has(key));
+  if (!hasLegacyPayload) return '';
+
   const startType = url.searchParams.get('startType') || 'PORTALINJECT';
   const menuId = url.searchParams.get('menuId') || 'conformity';
   const injectParams = url.searchParams.get('injectParams') || '';
@@ -119,9 +156,12 @@ function normalizeAppPayload(value) {
   return String(value || '').trim().replace(/^\/\//, '').trim().replace(/&+$/g, '');
 }
 
-function getAppPayloadField(payload, field) {
-  const entry = normalizeAppPayload(payload).split('&').find(item => item.startsWith(`${field}=`));
-  return entry ? entry.slice(field.length + 1) : '';
+const MAX_APP_PAYLOAD_LENGTH = 4096;
+
+function isValidAppPayload(payload) {
+  return Boolean(payload)
+    && payload.length <= MAX_APP_PAYLOAD_LENGTH
+    && !/[\u0000-\u001f\u007f]/.test(payload);
 }
 
 function parseAppOpenUrl(value) {
@@ -174,18 +214,16 @@ async function loadData() {
 function render() {
   $('#cardRows').innerHTML = links.length ? links.map(link => {
     const shortUrl = publicUrl(joinPath(SHORTLINK_BASE, encodeURIComponent(link.short_code)));
-    const appOpen = parseAppOpenUrl(link.original_url);
     const targetUrl = getDisplayTarget(link);
     return `<tr>
       <td>${escapeHtml(link.title || '未命名链接')}</td>
       <td><span class="tag ${link.linkType}">${getTypeLabel(link.linkType)}</span></td>
       <td>${escapeHtml(link.linkDescription || '-')}</td>
-      <td><span class="status ${appOpen ? 'active' : 'inactive'}">${appOpen ? '已配置' : '—'}</span></td>
       <td><a href="${escapeHtml(shortUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(shortUrl)}</a></td>
       <td class="url">${escapeHtml(targetUrl)}</td>
       <td><a class="link" href="${escapeHtml(shortUrl)}" target="_blank" rel="noopener noreferrer">打开链接</a><button class="link" data-edit-link="${link.id}">修改</button><button class="link danger" data-delete-link="${link.id}">删除</button></td>
     </tr>`;
-  }).join('') : '<tr><td class="empty" colspan="7">暂无短链接，请先添加</td></tr>';
+  }).join('') : '<tr><td class="empty" colspan="6">暂无短链接，请先添加</td></tr>';
 }
 
 function syncTypeButtons() {
@@ -215,9 +253,8 @@ function populateAppDefaults() {
   $('#appPayload').value = '';
   $('#targetUrl').value = APP_CONFIG.webFallbackUrl || '';
   $('#plainTargetUrl').value = '';
-  showFieldError('#targetUrl', '#targetUrlError', '');
+  clearAppValidationErrors();
   showFieldError('#plainTargetUrl', '#plainTargetUrlError', '');
-  showFieldError('#appPayload', '#appPayloadError', '');
   syncTargetType();
 }
 
@@ -244,29 +281,29 @@ function validateAppFields() {
   const appPayload = normalizeAppPayload($('#appPayload').value);
   const webFallbackUrl = $('#targetUrl').value.trim();
 
-  if (!/^[a-z][a-z0-9+.-]*:\/\/$/i.test(iosScheme)) {
-    throw new Error('iOS Scheme 格式不正确，例如 com.icbc.iphoneclient://');
+  clearAppValidationErrors();
+  const schemes = [
+    { value: iosScheme, input: '#iosScheme', error: '#iosSchemeError', label: 'iOS' },
+    { value: androidScheme, input: '#androidScheme', error: '#androidSchemeError', label: 'Android' },
+    { value: harmonyScheme, input: '#harmonyScheme', error: '#harmonySchemeError', label: '鸿蒙' },
+  ];
+  if (!schemes.some(({ value }) => value)) {
+    throwGroupValidation('#schemeGroupError', '#iosScheme', '至少填写一个平台 Scheme');
   }
-  if (!/^[a-z][a-z0-9+.-]*:\/\/$/i.test(androidScheme)) {
-    throw new Error('Android Scheme 格式不正确，例如 com.icbc.androidclient://');
-  }
-  if (!/^[a-z][a-z0-9+.-]*:\/\/$/i.test(harmonyScheme)) {
-    throw new Error('鸿蒙 Scheme 格式不正确，例如 com.icbc.harmonyclient://');
-  }
-  const startType = getAppPayloadField(appPayload, 'startType');
-  const menuId = getAppPayloadField(appPayload, 'menuId');
-  const injectParams = getAppPayloadField(appPayload, 'injectParams');
-  if (!appPayload || !startType || !/^[A-Za-z][A-Za-z0-9_-]*$/.test(startType)) {
-    throw new Error('App 参数必须包含格式正确的 startType');
-  }
-  if (!menuId || !/^[A-Za-z][A-Za-z0-9_-]*$/.test(menuId)) {
-    throw new Error('App 参数必须包含格式正确的 menuId');
-  }
-  if (!injectParams || !isBase64(injectParams)) {
-    throw new Error('App 参数中的 injectParams 必须是有效的 Base64 字符串');
+  schemes.forEach(({ value, input, error, label }) => {
+    if (value && !/^[a-z][a-z0-9+.-]*:\/\/$/i.test(value)) {
+      throwFieldValidation(input, error, `${label} Scheme 格式不正确，例如 com.example.app://`);
+    }
+  });
+  if (!isValidAppPayload(appPayload)) {
+    throwFieldValidation(
+      '#appPayload',
+      '#appPayloadError',
+      `App 跳转参数不能为空，长度不能超过 ${MAX_APP_PAYLOAD_LENGTH} 个字符，且不能包含控制字符`,
+    );
   }
   if (!isHttpUrl(webFallbackUrl, true)) {
-    throw new Error('H5 回退页必须是完整的 HTTPS 地址');
+    throwFieldValidation('#targetUrl', '#targetUrlError', 'H5 回退页必须是完整的 HTTPS 地址');
   }
   return { iosScheme, androidScheme, harmonyScheme, appPayload, webFallbackUrl };
 }
@@ -349,7 +386,7 @@ $('#linkForm').onsubmit = async event => {
     closeDialogs();
     await loadData();
   } catch (error) {
-    notice(error.message, true);
+    if (!(error instanceof FormValidationError)) notice(error.message, true);
   } finally {
     button.disabled = false;
   }
@@ -395,9 +432,8 @@ document.addEventListener('click', async event => {
       $('#targetUrl').value = APP_CONFIG.webFallbackUrl || '';
       $('#appPayload').value = '';
     }
-    showFieldError('#targetUrl', '#targetUrlError', '');
     showFieldError('#plainTargetUrl', '#plainTargetUrlError', '');
-    showFieldError('#appPayload', '#appPayloadError', '');
+    clearAppValidationErrors();
     syncTargetType();
     $('#linkDialog').showModal();
     return;
